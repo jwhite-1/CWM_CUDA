@@ -7,6 +7,6 @@
 #SBATCH --gres = gpu:1
 
 module purge
-module laod gpu/cuda
+module load gpu/cuda
 
 ./monte_pi
