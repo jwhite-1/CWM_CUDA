@@ -1,0 +1,7 @@
+http://web.mit.edu/pocky/www/cudaworkshop/MonteCarlo/Pi.cu
+
+https://bitbucket.org/jsandham/algorithms_in_cuda/src/master/monti_carlo_pi/
+
+https://gist.github.com/akiross/17e722c5bea92bd2c310324eac643df6
+
+https://github.com/wesarmour/CWM-in-HPC-and-Scientific-Computing-2019
