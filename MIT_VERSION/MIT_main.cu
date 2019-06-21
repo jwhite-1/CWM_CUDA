@@ -79,4 +79,4 @@ BLOCKS, THREADS);
 	printf("CPU estimate of PI = %f [error of %f]\n", pi_cpu, pi_cpu - PI);
 	
 	return 0;
-}
+

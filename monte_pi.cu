@@ -1,11 +1,32 @@
+/*
+modified from
+
+https://bitbucket.org/jsandham/algorithms_in_cuda/src/master/monti_carlo_pi/
+
+https://gist.github.com/akiross/17e722c5bea92bd2c310324eac643df6
+
+
+
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
+#include <curand.h>
+#include <math.h>
 
-__global__ void count_pi(iterations)
+__global__ void setup_kernel(curandState *state)
+{
+	int index = threadIdx.x + blockDim.x*blockIdx.x;
+	curand_init(134872847, index, 0, &state[index]);
+}
 
+
+
+__global__ void count_pi(curandState *state,int *count,int iterations)
 {
 	
 	// initialise thread ID
@@ -14,12 +35,12 @@ __global__ void count_pi(iterations)
  	// initialise shared array
         __shared__ int counter[256];
         counter[threadIdx.x] = 0;
- 
+	__syncthreads();
 
 
 
 	// initialise RNG
-	curand_init(45287643, index, 0, &state[index]);
+	curand_init(45287643, index, 0, &state[tid]);
 
 	// initialise the counter
 	counter[threadId.x] = 0;
@@ -28,8 +49,8 @@ __global__ void count_pi(iterations)
 	for (int i = 0; i < iterations; i++)
 	{
 
-		float x = curand_uniform();
-		float y = curand_uniform();
+		float x = curand_uniform(&state[tid]);
+		float y = curand_uniform(&state[tid]);
 		counter[threadIdx.x] += 1 - int(x*x + y*y);
 
 	}
@@ -45,7 +66,7 @@ __global__ void count_pi(iterations)
 	i /= 2;
 	__syncthreads();
 	}
-
+	// sum the values without threads clashing
 	if (threadIdx.x == 0)
 	{
 		atomicAdd(count,counter[0]);
@@ -54,7 +75,48 @@ __global__ void count_pi(iterations)
 
 int main() {
 
-	int N = 100000000;
+	// initialise variables
+	int n = 256*256;
+	int m = 100000000;
+	int *h_count;
+	int *d_count;
+	curandState *d_state;
+	float pi;
+
+	// allocate mem
+	h_count = (int*)malloc(n*sizeof(int));
+	cudaMalloc((void**)&d_count, n*sizeof(int));
+	cudaMalloc((void**)&d_state, n*sizeof(curandState));
+	cudaMemset(d_count, 0, sizeof(int));
+
+	// set up timing stuff
+	float gpu_elapsed_time;
+	cudaEvent_t gpu_start, gpu_stop;
+	cudaEventCreate(&gpu_start);
+	cudaEventCreate(&gpu_stop);
+	cudaEventRecord(gpu_start, 0);
+
+	// set kernel
+	dim3 gridSize = 256;
+	dim3 blockSize = 256;
+
+	setup_kernel<<<gridSize, blockSize>>>(d_state, d_count, m);
+
+	// run simulation
+	monte_pi<<<gridSize, blockSize>>(d_state,d_count,m);
+
+	// copy results back to the host
+	cudaMemcpy(h_count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+	cudaEventRecord(gpu_stop, 0);
+	cudaEventSynchronize(gpu_stop);
+	cudaEventElapsedTime(&gpu_elapsed_time, gpu_start, gpu_stop);
+	cudaEventDestroy(gpu_start);
+	cudaEventDestroy(gpu_stop);
+
+	pi = *h_count*4.0/(n*m);
+	printf("Value of pi calculated is: %f",pi);
+
+
 	int area = 0;
 
 	count_pi<<<10,10>>>(N);
