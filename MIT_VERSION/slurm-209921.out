@@ -1,0 +1,8 @@
+# of trials per thread = 4096, # of blocks = 256, # of threads/block = 256.
+GPU pi calculated in 0.190000 s.
+CPU pi calculated in 8.630000 s.
+CUDA estimate of PI = 3.141582 [error of -0.000011]
+CPU estimate of PI = 3.141581 [error of -0.000012]
+/var/spool/slurmd/job209921/slurm_script: line 13: /home/teaching28: Is a directory
+/var/spool/slurmd/job209921/slurm_script: line 14: /home/teaching28: Is a directory
+/var/spool/slurmd/job209921/slurm_script: line 15: /home/teaching28: Is a directory
